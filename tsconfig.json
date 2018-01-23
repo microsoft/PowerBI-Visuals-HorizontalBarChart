@@ -17,7 +17,7 @@
     "src/tooltipServiceWrapper.ts",
     "src/barChart.ts",
     "node_modules/jquery/dist/jquery.js",
-    
+    "node_modules/lodash/lodash.js",
     "src/objectEnumerationUtility.ts",
     "src/localization/localizationHelper.ts",
     "src/localization/localizedResources.ts"

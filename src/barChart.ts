@@ -171,8 +171,7 @@ module powerbi.extensibility.visual {
         if(overlapIndex !=-1){
             overlapDataValue = getDataValueForOverlapValue(categorical.values, overlapIndex);
         }
-        // console.log("overlapDataValue");
-        // console.log(overlapDataValue);
+        
         let tooltipData = categorical.values.slice(1, categorical.values.length);
 
         let valueFormatterForCategories: IValueFormatter = ValueFormatter.create({
@@ -265,7 +264,7 @@ module powerbi.extensibility.visual {
                 formattedValue: valueFormatterForCategories.format(dataValue.values[i]),
                 overlapValue: overlapDataValue.length > 0 ? overlapDataValue[i] : null,
                 formattedOverlapValue: "",
-                precision: NumberFormat.getCustomFormatMetadata(format, true /*calculatePrecision*/).precision,
+                precision: NumberFormat.isStandardFormat(format) == false ? NumberFormat.getCustomFormatMetadata(format, true /*calculatePrecision*/).precision : null,//NumberFormat.getCustomFormatMetadata(format, true /*calculatePrecision*/).precision,
                 tooltip: tooltip,
                 color: getCategoricalObjectValue<Fill>(category, i, 'colorSelector', 'fill', defaultColor).solid.color,
                 selectionId: host.createSelectionIdBuilder()
@@ -374,7 +373,6 @@ module powerbi.extensibility.visual {
          *                                        the visual had queried.
          */
         public update(options: VisualUpdateOptions) {
-            
             // bar chart diagram
             //  ________________________________   _
             //  |                               |  |
@@ -402,10 +400,8 @@ module powerbi.extensibility.visual {
             //  |_______________________________|  _
 
             let viewModel: BarChartViewModel = visualTransform(options, this.host);
-
             let settings = this.barChartSettings = viewModel.settings;
             this.barDataPoints = viewModel.dataPoints;
-
             let width = options.viewport.width;
             let height = options.viewport.height;
 
@@ -413,7 +409,6 @@ module powerbi.extensibility.visual {
             let xScaledMax =  height/BarChart.Config.maxHeightScale;
             // Min height is independent of height the bar should be visible irrespective of the number of bars or the height of the visual
             let xScaledMin = BarChart.Config.xScaledMin;
-            //console.log(settings.barHeight.show);
             if(settings.barHeight.show){
                 
                 xScaledMin = settings.barHeight.height;
@@ -428,10 +423,7 @@ module powerbi.extensibility.visual {
             // calcHeight is the height required for the entire bar chart if min allowed bar height is used. (This is needed for setting the scroll height)
             let calcHeight = (-2*outerPadding - BarChart.Config.xScalePadding + viewModel.dataPoints.length)*xScaledMin;
             // The parent element is not directly available to us since we are in a sandbox
-            //d3.select(this.divContainer.node()).attr({ style: 'overflow-y:auto;' });
-            //$(this.svg.node().parentNode).prepend("#" + this.id )
-            //console.log("this.svg.node().parentNode");
-            //$(this.svg.node().parentNode).slimScroll({ height: '250px' });
+
             if(calcX > xScaledMax ){
                 if(xScaledMax >= xScaledMin){
                     let tempouterPadding = (height - (-BarChart.Config.xScalePadding + viewModel.dataPoints.length)*xScaledMax)/(2*xScaledMax);    
@@ -452,7 +444,7 @@ module powerbi.extensibility.visual {
             this.divContainer.attr({
                 style : 'width:'+w+'px;height:'+h+'px;overflow-y:auto;overflow-x:hidden;'
             });
-            //console.log(w);
+
             this.svg.attr({
                 width: width,
                 height: height
@@ -605,8 +597,7 @@ module powerbi.extensibility.visual {
             else
             texts.attr("style","mix-blend-mode: initial");
             if(viewModel.settings.showBarLabels.show){
-                //console.log("viewModel.settings.showBarLabels.show");
-                //console.log(viewModel.settings.showBarLabels.show);
+
                 let textValues = bars
                     .selectAll('text.bar-value').data(d => [d]);
                 textValues.enter().append('text');
@@ -621,7 +612,6 @@ module powerbi.extensibility.visual {
                     .text(d => { return <string>d.formattedValue });
             }
             else{
-                //console.log("b");
                 let textValues = bars
                 .selectAll('text.bar-value').remove();
             }     
@@ -886,11 +876,6 @@ module powerbi.extensibility.visual {
         var p = 0;
         var max = arr[i].value;
         for (i = 1; i<arr.length;i++){
-           // console.log("arr[i].value");
-           // console.log(arr[i].value);
-           // 
-           // console.log("max");
-           // console.log(max);
 
             if(arr[i].value>max){
                 max = arr[i].value;
