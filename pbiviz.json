@@ -1,0 +1,33 @@
+{
+  "visual": {
+    "name": "Bar Chart",
+    "displayName": "Horizontal Bar Chart",
+    "guid": "BarChartF5983CEA542C47889C9DE852B430DE5F",
+    "visualClassName": "BarChart",
+    "version": "1.4.0",
+    "description": "A horizontal bar chart that saves space by putting the category labels inside the bars",
+    "supportUrl": "spectaredev@microsoft.com",
+    "gitHubUrl": "https://microsoft.visualstudio.com/DefaultCollection/Universal%20Store/Capacity%20Insights/_git/SETO.Platform.Capacity?path=%2FPowerBI%2FbarFilters&version=GBmaster&_a=contents"
+  },
+  "apiVersion": "1.4.0",
+  "author": {
+    "name": "Aditya Lele",
+    "email": "adlele@microsoft.com"
+  },
+  "assets": {
+    "icon": "assets/icon.png"
+  },
+  "externalJS": [
+    "node_modules/jquery/dist/jquery.min.js",
+    
+    "node_modules/d3/d3.min.js",
+    "node_modules/globalize/lib/globalize.js",
+    "node_modules/globalize/lib/cultures/globalize.culture.en-US.js",
+    "node_modules/powerbi-visuals-utils-typeutils/lib/index.js",
+    "node_modules/powerbi-visuals-utils-svgutils/lib/index.js",
+    "node_modules/powerbi-visuals-utils-dataviewutils/lib/index.js",
+    "node_modules/powerbi-visuals-utils-formattingutils/lib/index.js"
+  ],
+  "style": "style/visual.less",
+  "capabilities": "capabilities.json"
+}
