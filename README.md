@@ -27,6 +27,7 @@ Once you have cloned this example, run these commands to install dependencies an
 ```
 npm install # This command will install all necessary modules
 typings install # This command will install all neccesary typings
+pbiviz update # This command installs the powerbi api
 ```
 
 ### Start dev app
