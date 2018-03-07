@@ -6,7 +6,7 @@
     "visualClassName": "BarChart",
     "version": "1.4.0",
     "description": "A horizontal bar chart that saves space by putting the category labels inside the bars",
-    "supportUrl": "cidevs@microsoft.com",
+    "supportUrl": "https://community.powerbi.com/t5/Custom-Visuals-Community/ct-p/CustomVisuals",
     "gitHubUrl": "https://github.com/Microsoft/PowerBI-Visuals-HorizontalBarChart"
   },
   "apiVersion": "1.4.0",
