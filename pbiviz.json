@@ -7,12 +7,12 @@
     "version": "1.4.0",
     "description": "A horizontal bar chart that saves space by putting the category labels inside the bars",
     "supportUrl": "cidevs@microsoft.com",
-    "gitHubUrl": "https://microsoft.visualstudio.com/DefaultCollection/Universal%20Store/Capacity%20Insights/_git/SETO.Platform.Capacity?path=%2FPowerBI%2FbarFilters&version=GBmaster&_a=contents"
+    "gitHubUrl": "https://github.com/Microsoft/PowerBI-Visuals-HorizontalBarChart"
   },
   "apiVersion": "1.4.0",
   "author": {
-    "name": "Aditya Lele",
-    "email": "adlele@microsoft.com"
+    "name": "Microsoft",
+    "email": "pbicvsupport@microsoft.com"
   },
   "assets": {
     "icon": "assets/icon6.png"
