@@ -1,4 +1,3 @@
-
 # Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
@@ -39,3 +38,6 @@ pbiviz start
 ```
 pbiviz package
 ```
+
+# AppSource
+https://appsource.microsoft.com/en-us/product/power-bi-visuals/WA104381230
