@@ -76,11 +76,11 @@
         }
     ],
     "objects": {
-        "enableAxis": {
-            "displayName": "Enable Axis",
+        "clearFilters": {
+            "displayName": "Clear filters on background click",
             "properties": {
                 "show": {
-                    "displayName": "Enable Axis",
+                    "displayName": "Clear filters on background click",
                     "type": {
                         "bool": true
                     }
@@ -132,7 +132,7 @@
                 }
             }
         },
-        "experimental":{
+        "experimental": {
             "displayName": "Blend(Experimental)",
             "properties": {
                 "show": {
@@ -141,9 +141,9 @@
                         "bool": true
                     }
                 },
-                "blendMode" :{
+                "blendMode": {
                     "displayName": "Mode",
-                    "type":{
+                    "type": {
                         "enumeration": [
                             {
                                 "displayName": "multiply",
@@ -176,23 +176,19 @@
                             {
                                 "displayName": "hue",
                                 "value": "hue"
-                            }
-                            ,
+                            },
                             {
                                 "displayName": "saturation",
                                 "value": "saturation"
-                            }
-                            ,
+                            },
                             {
                                 "displayName": "color",
                                 "value": "color"
-                            }
-                            ,
+                            },
                             {
                                 "displayName": "luminosity",
                                 "value": "luminosity"
-                            }
-                            ,
+                            },
                             {
                                 "displayName": "initial",
                                 "value": "initial"
@@ -260,6 +256,27 @@
                                 "color": true
                             }
                         }
+                    }
+                },
+                "highlightColor": {
+                    "displayName": "Highlight Color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "alignBarLabels": {
+            "displayName": "Align Right",
+            "properties": {
+                "show": {
+                    "displayName": "Show",
+                    "type": {
+                        "bool": true
                     }
                 }
             }

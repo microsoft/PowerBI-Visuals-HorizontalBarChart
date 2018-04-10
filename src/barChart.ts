@@ -4,6 +4,7 @@ import IValueFormatter = powerbi.extensibility.utils.formatting.IValueFormatter;
 import textMeasurementService = powerbi.extensibility.utils.formatting.textMeasurementService;
 import NumberFormat = powerbi.extensibility.utils.formatting.numberFormat;
 module powerbi.extensibility.visual {
+    import ISelectionId = powerbi.visuals.ISelectionId;
     /**
      * Interface for BarCharts viewmodel.
      *
@@ -14,17 +15,18 @@ module powerbi.extensibility.visual {
     interface BarChartViewModel {
         dataPoints: BarChartDataPoint[];
         dataMax: number;
+        widthMax: number;
         settings: BarChartSettings;
     };
     // interface used by text measurement services
     interface TextProperties {
-    text?: string;
-    fontFamily: string;
-    fontSize: string;
-    fontWeight?: string;
-    fontStyle?: string;
-    whiteSpace?: string;
-}
+        text?: string;
+        fontFamily: string;
+        fontSize: string;
+        fontWeight?: string;
+        fontStyle?: string;
+        whiteSpace?: string;
+    }
     /**
      * Interface for BarChart data points.
      *
@@ -41,13 +43,15 @@ module powerbi.extensibility.visual {
         overlapValue: PrimitiveValue,
         formattedOverlapValue: string,
         category: string;
-        precision : number;
+        precision: number;
         tooltip: any;
         color: string;
         selectionId: ISelectionId;
-        width:number;
+        width: number;
+        currTextWidth: number;
+        selected: boolean;
     };
-
+    type xScaleFunction = (n: PrimitiveValue) => any;
     /**
      * Interface for BarChart settings.
      *
@@ -57,38 +61,45 @@ module powerbi.extensibility.visual {
     interface BarChartSettings {
 
         generalView: {
-            minHeight: number;
-            barHeight: number;
-            opacity: number;
-            barsColor: any;
-            overlapColor: any;
-            textColor: any;
-            
+            minHeight: number,
+            barHeight: number,
+            opacity: number,
+            barsColor: any,
+            overlapColor: any,
+            textColor: any
+
         };
-        fontParams:{
-            show : boolean,
-            fontSize : number
+        fontParams: {
+            show: boolean,
+            fontSize: number
         };
-        units:{
+        units: {
             tooltipUnits: number,
             decimalPlaces: number
         };
-        showBarLabels:{
-            show : boolean,
-            textColor: any
+        showBarLabels: {
+            show: boolean,
+            textColor: any,
+            highlightColor: any
         };
-        barShape:{
-            shape:string,
-            labelPosition:string,
-            headColor:any,
-        };
-        barHeight:{
-            show:boolean,
-            height:number
-        };
-        experimental:{
+        alignBarLabels: {
             show: boolean
-            blendMode:string
+        };
+        barShape: {
+            shape: string,
+            labelPosition: string,
+            headColor: any,
+        };
+        barHeight: {
+            show: boolean,
+            height: number
+        };
+        experimental: {
+            show: boolean,
+            blendMode: string
+        };
+        clearFilters: {
+            show: boolean
         }
     }
 
@@ -103,6 +114,7 @@ module powerbi.extensibility.visual {
      */
     function visualTransform(options: VisualUpdateOptions, host: IVisualHost): BarChartViewModel {
         let dataViews = options.dataViews;
+
         let defaultSettings: BarChartSettings = {
 
             generalView: {
@@ -117,32 +129,40 @@ module powerbi.extensibility.visual {
                 show: false,
                 fontSize: 11
             },
-            units:{
-                tooltipUnits:0,
-                decimalPlaces:null
+            units: {
+                tooltipUnits: 0,
+                decimalPlaces: null
             },
             showBarLabels: {
-                show :true,
-                textColor: { solid: { color: "#000" } }
+                show: true,
+                textColor: { solid: { color: "#000" } },
+                highlightColor: { solid: { color: "#E6E6E6" } }
             },
-            barShape:{
-                shape :"Bar",
-                labelPosition:"Top",
+            alignBarLabels: {
+                show: false
+            },
+            barShape: {
+                shape: "Bar",
+                labelPosition: "Top",
                 headColor: { solid: { color: "#FEA19E" } },
             },
-            barHeight:{
+            barHeight: {
                 show: true,
                 height: 30
-                
+
             },
-            experimental:{
-                show:false,
+            experimental: {
+                show: false,
                 blendMode: "difference"
+            },
+            clearFilters: {
+                show: false
             }
         };
         let viewModel: BarChartViewModel = {
             dataPoints: [],
             dataMax: 0,
+            widthMax: 0,
             settings: <BarChartSettings>{}
         };
 
@@ -160,18 +180,13 @@ module powerbi.extensibility.visual {
         let metadata = dataViews[0].metadata;
 
         let overlapDataValue = [];
-        // console.log("categorical");
-        // console.log(categorical);
-        // console.log("metadata");
-        // console.log(metadata);
-        
-        //let totalCategories = getTotalCategories(metadata);
+
         let overlapIndex = getOverlapIndex(metadata);
 
-        if(overlapIndex !=-1){
+        if (overlapIndex != -1) {
             overlapDataValue = getDataValueForOverlapValue(categorical.values, overlapIndex);
         }
-        
+
         let tooltipData = categorical.values.slice(1, categorical.values.length);
 
         let valueFormatterForCategories: IValueFormatter = ValueFormatter.create({
@@ -182,9 +197,11 @@ module powerbi.extensibility.visual {
 
         let barChartDataPoints: BarChartDataPoint[] = [];
         let dataMax: number;
-
+        let lenMax: number = 0;
+        let currTextWidth: number = 0;
         let colorPalette: IColorPalette = host.colorPalette;
         let objects = metadata.objects;
+        let textProperties: TextProperties;
         let barChartSettings: BarChartSettings = {
 
             generalView: {
@@ -195,33 +212,40 @@ module powerbi.extensibility.visual {
                 overlapColor: getValue<string>(objects, 'generalView', 'overlapColor', defaultSettings.generalView.overlapColor),
                 textColor: getValue<string>(objects, 'generalView', 'textColor', defaultSettings.generalView.textColor)
             },
-            fontParams:{
-                show:getValue<boolean>(objects, 'fontParams', 'show', defaultSettings.fontParams.show),
+            fontParams: {
+                show: getValue<boolean>(objects, 'fontParams', 'show', defaultSettings.fontParams.show),
                 fontSize: getValue<number>(objects, 'fontParams', 'fontSize', defaultSettings.fontParams.fontSize),
             },
-            units:{
-                tooltipUnits:getValue<number>(objects, 'units', 'tooltipUnits', defaultSettings.units.tooltipUnits),
-                decimalPlaces:getValue<number>(objects, 'units', 'decimalPlaces', defaultSettings.units.decimalPlaces)
+            units: {
+                tooltipUnits: getValue<number>(objects, 'units', 'tooltipUnits', defaultSettings.units.tooltipUnits),
+                decimalPlaces: getValue<number>(objects, 'units', 'decimalPlaces', defaultSettings.units.decimalPlaces)
             },
-            showBarLabels:{
-                show:getValue<boolean>(objects, 'showBarLabels', 'show', defaultSettings.showBarLabels.show),
-                textColor: getValue<string>(objects, 'showBarLabels', 'textColor', defaultSettings.showBarLabels.textColor)
+            showBarLabels: {
+                show: getValue<boolean>(objects, 'showBarLabels', 'show', defaultSettings.showBarLabels.show),
+                textColor: getValue<string>(objects, 'showBarLabels', 'textColor', defaultSettings.showBarLabels.textColor),
+                highlightColor: getValue<string>(objects, 'showBarLabels', 'highlightColor', defaultSettings.showBarLabels.highlightColor)
             },
-            barShape:{
+            alignBarLabels: {
+                show: getValue<boolean>(objects, 'alignBarLabels', 'show', defaultSettings.alignBarLabels.show)
+            },
+            barShape: {
                 shape: getValue<string>(objects, 'barShape', 'shape', defaultSettings.barShape.shape),
                 labelPosition: getValue<string>(objects, 'barShape', 'labelPosition', defaultSettings.barShape.labelPosition),
                 headColor: getValue<string>(objects, 'barShape', 'headColor', defaultSettings.barShape.headColor),
             },
-            barHeight:{
-                show:getValue<boolean>(objects, 'barHeight', 'show', defaultSettings.barHeight.show),
-                height:getValue<number>(objects, 'barHeight', 'height', defaultSettings.barHeight.height) 
+            barHeight: {
+                show: getValue<boolean>(objects, 'barHeight', 'show', defaultSettings.barHeight.show),
+                height: getValue<number>(objects, 'barHeight', 'height', defaultSettings.barHeight.height)
             },
-            experimental:{
-                show:getValue<boolean>(objects, 'experimental', 'show', defaultSettings.experimental.show),
-                blendMode:getValue<string>(objects, 'experimental', 'blendMode', defaultSettings.experimental.blendMode),
+            experimental: {
+                show: getValue<boolean>(objects, 'experimental', 'show', defaultSettings.experimental.show),
+                blendMode: getValue<string>(objects, 'experimental', 'blendMode', defaultSettings.experimental.blendMode),
+            },
+            clearFilters: {
+                show: getValue<boolean>(objects, 'clearFilters', 'show', defaultSettings.clearFilters.show)
             }
         }
-  
+
         for (let i = 0, len = Math.max(category.values.length, dataValue.values.length); i < len; i++) {
             let defaultColor: Fill = {
                 solid: {
@@ -250,14 +274,21 @@ module powerbi.extensibility.visual {
                 tooltip.push({ displayName: tooltipData[j].source.displayName, value: valueFormatterForCategories.format(tooltipData[j].values[i]) });
             }
 
-                 
+
             let format = ValueFormatter.getFormatStringByColumn(metadata.columns[getMetadataIndexFor(categorical.values[0].source.displayName, metadata.columns)]);
             valueFormatterForCategories = ValueFormatter.create({
-                    format: format,
-                    value: dataValue,
-                    value2: categorical.values[categorical.values.length - 1]
-                });
-                
+                format: format,
+                value: dataValue,
+                value2: categorical.values[categorical.values.length - 1]
+            });
+
+            textProperties = {
+                text: valueFormatterForCategories.format(dataValue.values[i]),
+                fontFamily: "sans-serif",
+                fontSize: barChartSettings.fontParams.fontSize + 'px'
+            };
+
+            currTextWidth = textMeasurementService.measureSvgTextWidth(textProperties);
             barChartDataPoints.push({
                 category: category.values[i] + '',
                 value: dataValue.values[i],
@@ -270,7 +301,9 @@ module powerbi.extensibility.visual {
                 selectionId: host.createSelectionIdBuilder()
                     .withCategory(category, i)
                     .createSelectionId(),
-                width: null
+                width: null,
+                currTextWidth: currTextWidth,
+                selected: false
             });
 
         }
@@ -280,24 +313,25 @@ module powerbi.extensibility.visual {
         return {
             dataPoints: barChartDataPoints,
             dataMax: dataMax,
+            widthMax: lenMax,
             settings: barChartSettings,
         };
     }
-    function getOverlapIndex(metadata){
+    function getOverlapIndex(metadata) {
         let index = -1;
-        if(metadata.columns && metadata.columns.length > 0){
+        if (metadata.columns && metadata.columns.length > 0) {
             metadata.columns.forEach(element => {
-                if(element.roles.hasOwnProperty("overlapValues")){
-                    index =  element.index;
+                if (element.roles.hasOwnProperty("overlapValues")) {
+                    index = element.index;
                 }
-             });
+            });
         }
         return index;
     }
-    function getDataValueForOverlapValue(values, overlapIndex){
+    function getDataValueForOverlapValue(values, overlapIndex) {
         let index = -1;
-        for(var i=0;i<values.length;i++){
-            if(values[i].source.index == overlapIndex){
+        for (var i = 0; i < values.length; i++) {
+            if (values[i].source.index == overlapIndex) {
                 index = i;
                 break;
             }
@@ -308,11 +342,13 @@ module powerbi.extensibility.visual {
     }
 
     export class BarChart implements IVisual {
+
         private svg: d3.Selection<SVGElement>;
         private divContainer: d3.Selection<SVGElement>;
         private host: IVisualHost;
         private selectionManager: ISelectionManager;
         private selectionIdBuilder: ISelectionIdBuilder;
+        private bookmarkIds: ISelectionId[];
         private barChartContainer: d3.Selection<SVGElement>;
         private barContainer: d3.Selection<SVGElement>;
         private xAxis: d3.Selection<SVGElement>;
@@ -321,18 +357,54 @@ module powerbi.extensibility.visual {
         private tooltipServiceWrapper: ITooltipServiceWrapper;
         private locale: string;
         private data: Object[];
+        private barSelection: d3.selection.Update<BarChartDataPoint>;
+
 
         static Config = {
             xScalePadding: 0.15,
-            barPadding : 0.15,
+            barPadding: 0.15,
             xScaledMin: 30,
-            outerPaddingScale : 0.5,
-            fontScaleFactor : 3,
+            outerPaddingScale: 0.5,
+            fontScaleFactor: 3,
             solidOpacity: 1,
             transparentOpacity: 0.5,
             xAxisFontMultiplier: 0.04,
             maxHeightScale: 3
         };
+
+        private isSelectionIdInArray(selectionIds: ISelectionId[], selectionId: ISelectionId): boolean {
+            if (!selectionIds || !selectionId) {
+                return false;
+            }
+
+            return selectionIds.some((currentSelectionId: ISelectionId) => {
+                return currentSelectionId.includes(selectionId);
+            });
+        }
+
+        private syncSelectionState(selection: d3.Selection<BarChartDataPoint>, selectionIds: ISelectionId[]): void {
+            if (!selection || !selectionIds) {
+                return;
+            }
+
+            if (!selectionIds.length) {
+                selection.style("fill-opacity", null);
+                return;
+            }
+
+            const self: this = this;
+
+            selection.each(function (barDataPoint: BarChartDataPoint) {
+                const isSelected: boolean = self.isSelectionIdInArray(selectionIds, barDataPoint.selectionId);
+
+                d3.select(this).style(
+                    "fill-opacity",
+                    isSelected
+                        ? BarChart.Config.solidOpacity
+                        : BarChart.Config.transparentOpacity
+                );
+            });
+        }
 
         /**
          * Creates instance of BarChart. This method is only called once.
@@ -346,12 +418,17 @@ module powerbi.extensibility.visual {
             this.host = options.host;
             this.locale = options.host.locale;
             this.selectionManager = options.host.createSelectionManager();
+
+            this.selectionManager.registerOnSelectCallback(() => {
+                this.syncSelectionState(this.barSelection, this.selectionManager.getSelectionIds() as ISelectionId[]);
+            });
+
             this.selectionIdBuilder = options.host.createSelectionIdBuilder();
             this.tooltipServiceWrapper = createTooltipServiceWrapper(this.host.tooltipService, options.element);
-            
+
             let svg = this.svg = d3.select(options.element)
                 .append('div')
-                .classed('divContainer',true)
+                .classed('divContainer', true)
                 .append('svg')
                 .classed('barChart', true);
 
@@ -360,8 +437,8 @@ module powerbi.extensibility.visual {
 
             this.xAxis = svg.append('g')
                 .classed('xAxis', true);
-
             this.divContainer = d3.select('.divContainer');
+
         }
 
         /**
@@ -406,43 +483,43 @@ module powerbi.extensibility.visual {
             let height = options.viewport.height;
 
             // Calculate max height of each bar based on the total height of the visual
-            let xScaledMax =  height/BarChart.Config.maxHeightScale;
+            let xScaledMax = height / BarChart.Config.maxHeightScale;
             // Min height is independent of height the bar should be visible irrespective of the number of bars or the height of the visual
             let xScaledMin = BarChart.Config.xScaledMin;
-            if(settings.barHeight.show){
-                
+            if (settings.barHeight.show) {
+
                 xScaledMin = settings.barHeight.height;
             }
             else xScaledMin = BarChart.Config.xScaledMin;
-            
+
             let outerPadding = 0.1;
             // calcX is the calculated height of the bar+inner padding that will be required if we simply distribute the height with the bar count (no scrolling)
-            let calcX = height/(2*BarChart.Config.outerPaddingScale - BarChart.Config.xScalePadding + viewModel.dataPoints.length);
+            let calcX = height / (2 * BarChart.Config.outerPaddingScale - BarChart.Config.xScalePadding + viewModel.dataPoints.length);
             // calcOuterPadding is the padding required if the bar height+inner padding = xScaledMax which is the max allowed value calculated earlier
-            let calcOuterPadding = (height - (-BarChart.Config.xScalePadding + viewModel.dataPoints.length)*xScaledMax)/(2*xScaledMax);
+            let calcOuterPadding = (height - (-BarChart.Config.xScalePadding + viewModel.dataPoints.length) * xScaledMax) / (2 * xScaledMax);
             // calcHeight is the height required for the entire bar chart if min allowed bar height is used. (This is needed for setting the scroll height)
-            let calcHeight = (-2*outerPadding - BarChart.Config.xScalePadding + viewModel.dataPoints.length)*xScaledMin;
+            let calcHeight = (-2 * outerPadding - BarChart.Config.xScalePadding + viewModel.dataPoints.length) * xScaledMin;
             // The parent element is not directly available to us since we are in a sandbox
 
-            if(calcX > xScaledMax ){
-                if(xScaledMax >= xScaledMin){
-                    let tempouterPadding = (height - (-BarChart.Config.xScalePadding + viewModel.dataPoints.length)*xScaledMax)/(2*xScaledMax);    
+            if (calcX > xScaledMax) {
+                if (xScaledMax >= xScaledMin) {
+                    let tempouterPadding = (height - (-BarChart.Config.xScalePadding + viewModel.dataPoints.length) * xScaledMax) / (2 * xScaledMax);
                     if (tempouterPadding > 0) outerPadding = tempouterPadding
                 }
-                else{
-                    let tempOuterPadding = (height - (-BarChart.Config.xScalePadding + viewModel.dataPoints.length)*xScaledMin)/(2*xScaledMin);    
-                    if (tempOuterPadding > 0) outerPadding = tempOuterPadding      
-                }    
+                else {
+                    let tempOuterPadding = (height - (-BarChart.Config.xScalePadding + viewModel.dataPoints.length) * xScaledMin) / (2 * xScaledMin);
+                    if (tempOuterPadding > 0) outerPadding = tempOuterPadding
+                }
             }
-            else{ 
-                if(calcX < xScaledMin && calcHeight > height){
+            else {
+                if (calcX < xScaledMin && calcHeight > height) {
                     height = calcHeight;
                 }
             }
-            let h = options.viewport.height+5;
+            let h = options.viewport.height + 5;
             let w = options.viewport.width;
             this.divContainer.attr({
-                style : 'width:'+w+'px;height:'+h+'px;overflow-y:auto;overflow-x:hidden;'
+                style: 'width:' + w + 'px;height:' + h + 'px;overflow-y:auto;overflow-x:hidden;'
             });
 
             this.svg.attr({
@@ -459,10 +536,10 @@ module powerbi.extensibility.visual {
                 .rangeBands([5, height], BarChart.Config.barPadding, outerPadding);
 
             // cap the fontsize between 8.5 and 40 for aesthetics (only when autoscaling font)
-            let fontSizeToUse =  this.barChartSettings.fontParams.show ? this.barChartSettings.fontParams.fontSize : yScale.rangeBand() / BarChart.Config.fontScaleFactor;
-            if(fontSizeToUse < 8.5 && !this.barChartSettings.fontParams.show)
+            let fontSizeToUse = this.barChartSettings.fontParams.show ? this.barChartSettings.fontParams.fontSize : yScale.rangeBand() / BarChart.Config.fontScaleFactor;
+            if (fontSizeToUse < 8.5 && !this.barChartSettings.fontParams.show)
                 fontSizeToUse = 8.5;
-            if(fontSizeToUse > 40 && !this.barChartSettings.fontParams.show)
+            if (fontSizeToUse > 40 && !this.barChartSettings.fontParams.show)
                 fontSizeToUse = 40;
 
             // Calculate label size to compute max bar size to use 
@@ -470,20 +547,35 @@ module powerbi.extensibility.visual {
             // Use the formatted value for the longest bar
             let indexForDataMax = getIndexForDataMax(viewModel.dataPoints);
             let formattedValue = viewModel.dataPoints[indexForDataMax].formattedValue;
-            
+
             let textProperties: TextProperties = {
                 text: formattedValue,
                 fontFamily: "sans-serif",
-                fontSize: fontSizeToUse+'px'
+                fontSize: fontSizeToUse + 'px'
             };
             let offset = textMeasurementService.measureSvgTextWidth(textProperties);
             let xScale = d3.scale.linear()
                 .domain([0, viewModel.dataMax])
-                .range([0, width-offset - 30]); //subtracting 30 for padding between the bar and the label
+                .range([0, width - offset - 40]); //subtracting 40 for padding between the bar and the label
+
+	    // empty rect to take full width for clickable area for clearing selection
+            let rectContainer = this.barContainer.selectAll('rect.rect-container').data([0]);
+
+            rectContainer
+                .enter()
+                .append('rect')
+                .classed('rect-container', true);
+
+            rectContainer.attr({
+                width: width,
+                height: height,
+                fill: 'white'
+            })
 
             let bars = this.barContainer
                 .selectAll('g.bar')
                 .data(viewModel.dataPoints);
+
 
             bars
                 .enter()
@@ -494,7 +586,8 @@ module powerbi.extensibility.visual {
                 x: d => BarChart.Config.xScalePadding,
                 y: d => yScale(d.category),
                 height: yScale.rangeBand(),
-                width: d => xScale(<number>d.value)
+                width: d => xScale(<number>d.value),
+                'selected': d => d.selected
             });
 
             let rects = bars.selectAll("rect.bar").data(d => [d]);
@@ -506,192 +599,260 @@ module powerbi.extensibility.visual {
                 .attr({
                     x: d => BarChart.Config.xScalePadding,
                     y: d => yScale(d.category),
-                    height: yScale.rangeBand()/((settings.barShape.shape == "Line" || settings.barShape.shape == "Lollipop" || settings.barShape.shape == "Hammer Head")  ? 8 : 1),
+                    height: yScale.rangeBand() / ((settings.barShape.shape == "Line" || settings.barShape.shape == "Lollipop" || settings.barShape.shape == "Hammer Head") ? 8 : 1),
                     width: d => xScale(<number>d.value),
                     fill: d => viewModel.settings.generalView.barsColor.solid.color,
-                    'fill-opacity': viewModel.settings.generalView.opacity / 100
+                    'fill-opacity': viewModel.settings.generalView.opacity / 100,
+                    'selected': d => d.selected
                 });
 
             let overlapRects = bars.selectAll("rect.overlapBar").data(d => [d]);
-                rects.enter()
-                    .append('rect')
-                    .classed('overlapBar', true);
-    
-                overlapRects
-                    .attr({
-                        x: d => BarChart.Config.xScalePadding,
-                        y: d => yScale(d.category),
-                        height: yScale.rangeBand()/((settings.barShape.shape == "Line" || settings.barShape.shape == "Lollipop" || settings.barShape.shape == "Hammer Head") ? 8 : 1),
-                        width: d => xScale(<number>d.overlapValue),
-                        fill: d => viewModel.settings.generalView.overlapColor.solid.color,
-                        'fill-opacity': viewModel.settings.generalView.opacity / 100
-                    });
-            
-            
-            if(settings.barShape.shape =="Lollipop"){
+            overlapRects.enter()
+                .append('rect')
+                .classed('overlapBar', true);
+
+            overlapRects
+                .attr({
+                    x: d => BarChart.Config.xScalePadding,
+                    y: d => yScale(d.category),
+                    height: yScale.rangeBand() / ((settings.barShape.shape == "Line" || settings.barShape.shape == "Lollipop" || settings.barShape.shape == "Hammer Head") ? 8 : 1),
+                    width: d => xScale(<number>d.overlapValue),
+                    fill: d => viewModel.settings.generalView.overlapColor.solid.color,
+                    'fill-opacity': viewModel.settings.generalView.opacity / 100,
+                    'selected': d => d.selected
+                });
+
+
+            if (settings.barShape.shape == "Lollipop") {
                 let circle = bars.selectAll("circle").data(d => [d]);
 
                 circle.enter()
                     .append('circle')
                     .classed('head', true);
-    
-                    circle
+
+                circle
                     .attr({
-                        cx: d => getHeadPositionX(d.value,d.width) - 2 - yScale.rangeBand()/8,  
-                        cy: d => yScale(d.category) + yScale.rangeBand()/16,// - textMeasurementService.measureSvgTextHeight(textProperties) / 4,
-                        r: yScale.rangeBand()/8, 
+                        cx: d => getHeadPositionX(d.value, d.width) - 2 - yScale.rangeBand() / 8,
+                        cy: d => yScale(d.category) + yScale.rangeBand() / 16,// - textMeasurementService.measureSvgTextHeight(textProperties) / 4,
+                        r: yScale.rangeBand() / 8,
                         fill: d => viewModel.settings.barShape.headColor.solid.color,
                         'fill-opacity': viewModel.settings.generalView.opacity / 100
                     });
             }
-            else{
+            else {
                 bars.selectAll("circle").remove();
             }
 
-            if(settings.barShape.shape =="Hammer Head"){
+            if (settings.barShape.shape == "Hammer Head") {
                 let line = bars.selectAll("line").data(d => [d]);
 
                 line.enter()
                     .append('line')
                     .classed('head', true);
-    
-                    line
+
+                line
                     .attr({
-                        x1: d => getHeadPositionX(d.value,d.width) - 7 - yScale.rangeBand()/32,// - 2 - yScale.rangeBand()/8,  
-                        x2: d => getHeadPositionX(d.value,d.width) - 7 - yScale.rangeBand()/32,// - 2 - yScale.rangeBand()/8,  
-                        y1: d => yScale(d.category) - yScale.rangeBand()/16,// - textMeasurementService.measureSvgTextHeight(textProperties) / 4,
-                        y2: d => yScale(d.category) + yScale.rangeBand()/16 + yScale.rangeBand()/8,// - textMeasurementService.measureSvgTextHeight(textProperties) / 4,
-                        
-                        'stroke-width': yScale.rangeBand()/16,
+                        x1: d => getHeadPositionX(d.value, d.width) - 7 - yScale.rangeBand() / 32,// - 2 - yScale.rangeBand()/8,  
+                        x2: d => getHeadPositionX(d.value, d.width) - 7 - yScale.rangeBand() / 32,// - 2 - yScale.rangeBand()/8,  
+                        y1: d => yScale(d.category) - yScale.rangeBand() / 16,// - textMeasurementService.measureSvgTextHeight(textProperties) / 4,
+                        y2: d => yScale(d.category) + yScale.rangeBand() / 16 + yScale.rangeBand() / 8,// - textMeasurementService.measureSvgTextHeight(textProperties) / 4,
+
+                        'stroke-width': yScale.rangeBand() / 16,
                         'stroke': viewModel.settings.barShape.headColor.solid.color,
                         'stroke-opacity': viewModel.settings.generalView.opacity / 100
                     });
             }
-            else{
+            else {
                 bars.selectAll("line").remove();
             }
 
             textProperties = {
                 text: "TEXT for calculating height",
                 fontFamily: "Segoe UI",
-                fontSize: fontSizeToUse+'px'
+                fontSize: fontSizeToUse + 'px'
             };
-            
+
             let texts = bars
                 .selectAll('text.bar-text').data(d => [d]);
             texts.enter().append('text');
             texts.attr({
                 height: yScale.rangeBand(),
-                y: d => yScale(d.category) + yScale.rangeBand()/2 + textMeasurementService.measureSvgTextHeight(textProperties)/4,
+                y: d => yScale(d.category) + yScale.rangeBand() / 2 + textMeasurementService.measureSvgTextHeight(textProperties) / 4,
                 x: 5,
                 'font-size': fontSizeToUse,
                 fill: d => viewModel.settings.generalView.textColor.solid.color
             })
                 .classed('bar-text', true)
                 .text(d => { return d.category })
-                .each(function(d) {
+                .each(function (d) {
                     d.width = this.getBBox().width;
-            });
-            if(this.barChartSettings.experimental.show)
-                texts.attr("style","mix-blend-mode: "+this.barChartSettings.experimental.blendMode);
+                });
+            if (this.barChartSettings.experimental.show)
+                texts.attr("style", "mix-blend-mode: " + this.barChartSettings.experimental.blendMode);
             else
-            texts.attr("style","mix-blend-mode: initial");
-            if(viewModel.settings.showBarLabels.show){
+                texts.attr("style", "mix-blend-mode: initial");
+            if (viewModel.settings.showBarLabels.show) {
+
+                let valuesRect = bars.selectAll("rect.valuesRect").data(d => [d]);
+                valuesRect.enter()
+                    .append('rect')
+                    .classed('valuesRect', true);
+
+                valuesRect
+                    .attr({
+                        x: d => {
+                            //subtracting 2 for padding
+                            return viewModel.settings.alignBarLabels.show ? getTextPositionX(viewModel.dataMax, d.width) - 2 : getTextPositionX(d.value, d.width) - 2
+                        },
+                        y: d => getTextPositionY(d.category, textProperties) - 3 / 4 * textMeasurementService.measureSvgTextHeight(textProperties),
+                        rx: 2,
+                        ry: 2,
+                        height: textMeasurementService.measureSvgTextHeight(textProperties),
+                        // width is adding 5 for padding around text
+                        width: d => 5 + textMeasurementService.measureSvgTextWidth(
+                            {
+                                text: <string>d.formattedValue,
+                                fontFamily: "Segoe UI",
+                                fontSize: fontSizeToUse + 'px'
+                            }),
+                        fill: d => viewModel.settings.showBarLabels.highlightColor.solid.color,
+                        'fill-opacity': viewModel.settings.generalView.opacity / 100
+                    });
 
                 let textValues = bars
                     .selectAll('text.bar-value').data(d => [d]);
                 textValues.enter().append('text');
                 textValues.attr({
                     height: yScale.rangeBand(),
-                    y: d => getTextPositionY(d.category,textProperties),
-                    x: d => getTextPositionX(d.value,d.width),
+                    y: d => getTextPositionY(d.category, textProperties),
+                    x: d => {
+                        return viewModel.settings.alignBarLabels.show ? getTextPositionX(viewModel.dataMax, d.width) : getTextPositionX(d.value, d.width)
+                    },
                     'font-size': fontSizeToUse,
                     fill: d => viewModel.settings.showBarLabels.textColor.solid.color
                 })
                     .classed('bar-value', true)
                     .text(d => { return <string>d.formattedValue });
+
             }
-            else{
+            else {
+
                 let textValues = bars
-                .selectAll('text.bar-value').remove();
-            }     
+                    .selectAll('text.bar-value').remove();
+                let valuesRect = bars.selectAll('rect.valuesRect').remove();
+            }
+
             this.tooltipServiceWrapper.addTooltip(this.barContainer.selectAll('.bar'),
                 (tooltipEvent: TooltipEventArgs<number>) => this.getTooltipData(tooltipEvent.data),
                 (tooltipEvent: TooltipEventArgs<number>) => null);
+
+            
+            this.syncSelectionState(
+                bars,
+                this.selectionManager.getSelectionIds() as ISelectionId[]
+            );
+            this.syncSelectionState(
+                rects,
+                this.selectionManager.getSelectionIds() as ISelectionId[]
+            );
+            this.syncSelectionState(
+                overlapRects,
+                this.selectionManager.getSelectionIds() as ISelectionId[]
+            );
 
             let selectionManager = this.selectionManager;
 
             //This must be an anonymous function instead of a lambda because
             //d3 uses 'this' as the reference to the element that was clicked.
-            bars.on('click', function (d) {
-                selectionManager.select(d.selectionId).then((ids: ISelectionId[]) => {
-                    bars.attr({
-                        'fill-opacity': ids.length > 0 ? BarChart.Config.transparentOpacity : BarChart.Config.solidOpacity
+            
+            let area = d3.select('rect.rect-container');
+            area.on('click', function () {
+                //console.log(self.barChartSettings.clearFilters.show);
+                if (self.barChartSettings.clearFilters.show && selectionManager.hasSelection()) {
+                    selectionManager.clear().then(() => {
+                        self.syncSelectionState(bars, []);
+                        self.syncSelectionState(rects, []);
+                        self.syncSelectionState(overlapRects, []);
                     });
-                    rects.attr({
-                        'fill-opacity': ids.length > 0 ? BarChart.Config.transparentOpacity : BarChart.Config.solidOpacity
-                    });
+                }
 
-                    d3.select(this).attr({
-                        'fill-opacity': BarChart.Config.solidOpacity
-                    });
-                    d3.select(this).selectAll('rect').attr({
-                        'fill-opacity': BarChart.Config.solidOpacity
-                    });
+                bars.attr({
+                    'fill-opacity': BarChart.Config.solidOpacity
+                });
+                rects.attr({
+                    'fill-opacity': BarChart.Config.solidOpacity
+                });
+                overlapRects.attr({
+                    'fill-opacity': BarChart.Config.solidOpacity
+                });
+
+            });
+            let self: this = this;
+
+            bars.on('click', function (d) {
+
+                // set selected property of the attached data to false for all (later mark the one clicked as selected)
+
+                selectionManager.select(d.selectionId).then((ids: ISelectionId[]) => {
+                    self.syncSelectionState(bars, ids);
+                    self.syncSelectionState(rects, ids);
+                    self.syncSelectionState(overlapRects, ids);
 
                 });
 
-                (<Event>d3.event).stopPropagation();
             });
-
             bars.exit()
                 .remove();
-            function getTextPositionX(value,width){
-                
-                if(settings.barShape.shape == "Bar"){
-                    return xScale(<number>value) > width ? xScale(<number>value) + 8 : width + 8;
+
+
+            function getTextPositionX(value, width) {
+
+                if (settings.barShape.shape == "Bar") {
+                    return xScale(<number>value) > width ? xScale(<number>value) + 8 : width + 12;
                 }
-                else if(settings.barShape.shape == "Line" || settings.barShape.shape == "Lollipop" || settings.barShape.shape == "Hammer Head"){
-                    if(settings.barShape.labelPosition=="Top"){
-                        return   1.01*(xScale(<number>value) + 8);
-                    }else{
-                        return  1.01*(width + 8);
+                else if (settings.barShape.shape == "Line" || settings.barShape.shape == "Lollipop" || settings.barShape.shape == "Hammer Head") {
+                    if (viewModel.settings.alignBarLabels.show) {
+                        return 1.01 * (xScale(<number>value) + 8);
+                    }
+                    if (settings.barShape.labelPosition == "Top") {
+                        return 1.01 * (xScale(<number>value) + 8);
+                    } else {
+                        return 1.01 * (width + 8);
                     }
                 }
             };
-            function getTextPositionY(category,textProperties){
-                
-                if(settings.barShape.shape == "Bar"){
+            function getTextPositionY(category, textProperties) {
+                if (settings.barShape.shape == "Bar") {
                     return yScale(category) + yScale.rangeBand() / 2 + textMeasurementService.measureSvgTextHeight(textProperties) / 4;
                 }
-                else if(settings.barShape.shape == "Line" || settings.barShape.shape == "Lollipop" || settings.barShape.shape == "Hammer Head"){
-                    if(settings.barShape.labelPosition=="Top"){
-                        return yScale(category) + yScale.rangeBand() / 16 + textMeasurementService.measureSvgTextHeight(textProperties) / 4 ; 
-                    }else{
+                else if (settings.barShape.shape == "Line" || settings.barShape.shape == "Lollipop" || settings.barShape.shape == "Hammer Head") {
+                    if (settings.barShape.labelPosition == "Top") {
+                        return yScale(category) + yScale.rangeBand() / 16 + textMeasurementService.measureSvgTextHeight(textProperties) / 4;
+                    } else {
                         return yScale(category) + yScale.rangeBand() / 2 + textMeasurementService.measureSvgTextHeight(textProperties) / 4;
                     }
                 }
             };
-            function getHeadPositionX(value,width){
-                
-                if(settings.barShape.shape == "Bar"){
+            function getHeadPositionX(value, width) {
+
+                if (settings.barShape.shape == "Bar") {
                     return xScale(<number>value) > width ? xScale(<number>value) + 8 : width + 8;
                 }
-                else if(settings.barShape.shape == "Line" || settings.barShape.shape == "Lollipop" || settings.barShape.shape == "Hammer Head"){
-                    
-                        return   xScale(<number>value) + 8;
-                    
+                else if (settings.barShape.shape == "Line" || settings.barShape.shape == "Lollipop" || settings.barShape.shape == "Hammer Head") {
+
+                    return xScale(<number>value) + 8;
+
                 }
             };
-            function getHeadPositionY(category,textProperties){
-                
-                if(settings.barShape.shape == "Bar"){
+            function getHeadPositionY(category, textProperties) {
+
+                if (settings.barShape.shape == "Bar") {
                     return yScale(category) + yScale.rangeBand() / 2 + textMeasurementService.measureSvgTextHeight(textProperties) / 4;
                 }
-                else if(settings.barShape.shape == "Line" || settings.barShape.shape == "Lollipop" || settings.barShape.shape == "Hammer Head"){
-                    if(settings.barShape.labelPosition=="Top"){
-                        return yScale(category) + yScale.rangeBand() / 16 + textMeasurementService.measureSvgTextHeight(textProperties) / 4 ; 
-                    }else{
+                else if (settings.barShape.shape == "Line" || settings.barShape.shape == "Lollipop" || settings.barShape.shape == "Hammer Head") {
+                    if (settings.barShape.labelPosition == "Top") {
+                        return yScale(category) + yScale.rangeBand() / 16 + textMeasurementService.measureSvgTextHeight(textProperties) / 4;
+                    } else {
                         return yScale(category) + yScale.rangeBand() / 2 + textMeasurementService.measureSvgTextHeight(textProperties) / 4;
                     }
                 }
@@ -709,7 +870,7 @@ module powerbi.extensibility.visual {
             let objectEnumeration: VisualObjectInstance[] = [];
 
             switch (objectName) {
-                
+
                 case 'fontParams':
                     objectEnumeration.push({
                         objectName: objectName,
@@ -752,17 +913,27 @@ module powerbi.extensibility.visual {
                         selector: null
                     });
                     break;
-                    case 'showBarLabels':
+                case 'showBarLabels':
                     objectEnumeration.push({
                         objectName: objectName,
                         properties: {
                             show: this.barChartSettings.showBarLabels.show,
-                            textColor: this.barChartSettings.showBarLabels.textColor
+                            textColor: this.barChartSettings.showBarLabels.textColor,
+                            highlightColor: this.barChartSettings.showBarLabels.highlightColor
                         },
                         selector: null
                     });
                     break;
-                    case 'barShape':
+                case 'alignBarLabels':
+                    objectEnumeration.push({
+                        objectName: objectName,
+                        properties: {
+                            show: this.barChartSettings.alignBarLabels.show
+                        },
+                        selector: null
+                    });
+                    break;
+                case 'barShape':
                     objectEnumeration.push({
                         objectName: objectName,
                         properties: {
@@ -773,7 +944,7 @@ module powerbi.extensibility.visual {
                         selector: null
                     });
                     break;
-                    case 'barHeight':
+                case 'barHeight':
                     objectEnumeration.push({
                         objectName: objectName,
                         properties: {
@@ -781,7 +952,7 @@ module powerbi.extensibility.visual {
                             height: this.barChartSettings.barHeight.height
                         },
                         validValues: {
-                           
+
                             height: {
                                 numberRange: {
                                     min: 20,
@@ -792,17 +963,28 @@ module powerbi.extensibility.visual {
                         selector: null
                     });
                     break;
-                    case 'experimental':
+                case 'experimental':
                     objectEnumeration.push({
                         objectName: objectName,
                         properties: {
                             show: this.barChartSettings.experimental.show,
                             blendMode: this.barChartSettings.experimental.blendMode
                         },
-                        
+
                         selector: null
                     });
                     break;
+                case 'clearFilters':
+                    objectEnumeration.push({
+                        objectName: objectName,
+                        properties: {
+                            show: this.barChartSettings.clearFilters.show
+                        },
+
+                        selector: null
+                    });
+                    break;
+
             };
 
             return objectEnumeration;
@@ -823,7 +1005,7 @@ module powerbi.extensibility.visual {
 
             let language = getLocalizedString(this.locale, "LanguageKey");
             let tooltip = [];
-            
+
             tooltip.push({
                 //header: value.category,
                 displayName: value.category,
@@ -831,7 +1013,7 @@ module powerbi.extensibility.visual {
             });
 
             value.tooltip.forEach(element => {
-                tooltip.push({displayName:element.displayName,value:(typeof(element.value)==="string" ? (element.value || 0).toString() : (this.barChartSettings.units.decimalPlaces != null ? parseFloat(element.value).toFixed(this.barChartSettings.units.decimalPlaces) : element.value))});
+                tooltip.push({ displayName: element.displayName, value: (typeof (element.value) === "string" ? (element.value || 0).toString() : (this.barChartSettings.units.decimalPlaces != null ? parseFloat(element.value).toFixed(this.barChartSettings.units.decimalPlaces) : element.value)) });
             });
 
             return tooltip;
@@ -861,29 +1043,29 @@ module powerbi.extensibility.visual {
         }
     }
     function getMetadataIndexFor(displayName: any, values: any) {
-            var i;
+        var i;
 
-            for (i = 0; i < values.length; i++) {
-               
-                if (values[i].displayName == displayName){
-                    return i;
-                }
+        for (i = 0; i < values.length; i++) {
+
+            if (values[i].displayName == displayName) {
+                return i;
             }
-            return i;
         }
-    function getIndexForDataMax(arr){
+        return i;
+    }
+    function getIndexForDataMax(arr) {
         var i = 0;
         var p = 0;
         var max = arr[i].value;
-        for (i = 1; i<arr.length;i++){
+        for (i = 1; i < arr.length; i++) {
 
-            if(arr[i].value>max){
+            if (arr[i].value > max) {
                 max = arr[i].value;
-                p=i;
+                p = i;
             }
         }
         return p;
     }
 
-    
+
 }
