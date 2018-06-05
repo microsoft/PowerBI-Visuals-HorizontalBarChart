@@ -1,43 +1,19 @@
-# Contributing
+# Horizontal bar chart
 
-This project welcomes contributions and suggestions.  Most contributions require you to agree to a
-Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
-the rights to use your contribution. For details, visit https://cla.microsoft.com.
+> A horizontal bar chart that saves space by putting the category labels inside the bars
 
-When you submit a pull request, a CLA-bot will automatically determine whether you need to provide
-a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions
-provided by the bot. You will only need to do this once across all repos using our CLA.
+![screenshot](./assets/Screenshot.png)
 
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
-For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
-contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+# Overview
+This horizontal bar chart visual can be used as a filter to slice through your data in a more meaningful fashion while saving space by putting the category labels inside the bars itself. You can add different tooltips to show next level of detail that you don’t want visible right on the first look but still is relevant to the dataset.
 
+See also [Horizontal bar chart at Microsoft AppSource](https://appsource.microsoft.com/en-us/product/power-bi-visuals/WA104381230)
 
-### Setting Up Environment
+# Development Workflow
 
-Before starting creating your first custom visual follow by [this](https://github.com/Microsoft/PowerBI-visuals/blob/master/Readme.md#setting-up-environment)
-setting up environment instruction.
-
-
-### Install dev dependencies:
-
-Once you have cloned this example, run these commands to install dependencies and to connect the visual into powerbi.
-
+```bash
+npm i # installs all required modules
+npm run cert # generates and installs a SSL certificate
+npm start # starts debugging visual
+npm run package # build a pbiviz package for Power BI
 ```
-npm install # This command will install all necessary modules
-typings install # This command will install all neccesary typings
-pbiviz update # This command installs the powerbi api
-```
-
-### Start dev app
-```
-pbiviz start
-```
-
-### Create the visual package  
-```
-pbiviz package
-```
-
-# AppSource
-https://appsource.microsoft.com/en-us/product/power-bi-visuals/WA104381230
