@@ -14,7 +14,9 @@
     "powerbi-visuals-tools": "1.13.0",
     "http-proxy-agent": "2.1.0",
     "debug": "3.1.0",
-    "ms": "~2.0.0"
+    "ms": "~2.0.0",
+    "hoek": "4.2.1",
+    "unzipper": "0.9.2"
   },
   "dependencies": {
     "jquery": "3.2.1",
