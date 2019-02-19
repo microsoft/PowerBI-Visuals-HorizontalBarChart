@@ -569,7 +569,7 @@ module powerbi.extensibility.visual {
             rectContainer.attr({
                 width: width,
                 height: height,
-                fill: 'white'
+                fill: 'transparent'
             })
 
             let bars = this.barContainer
@@ -742,6 +742,8 @@ module powerbi.extensibility.visual {
                 let valuesRect = bars.selectAll('rect.valuesRect').remove();
             }
 
+            
+
             this.tooltipServiceWrapper.addTooltip(this.barContainer.selectAll('.bar'),
                 (tooltipEvent: TooltipEventArgs<BarChartDataPoint>) => this.getTooltipData(tooltipEvent.data),
                 (tooltipEvent: TooltipEventArgs<BarChartDataPoint>) => tooltipEvent.data.selectionId
@@ -762,6 +764,18 @@ module powerbi.extensibility.visual {
             );
 
             let selectionManager = this.selectionManager;
+            this.svg.on('contextmenu', () => {
+                debugger;
+                const mouseEvent: MouseEvent = d3.event as MouseEvent;
+                const eventTarget: EventTarget = mouseEvent.target;
+                let dataPoint = d3.select(eventTarget).datum();
+                selectionManager.showContextMenu(dataPoint? dataPoint.selectionId : {}, {
+                    x: mouseEvent.clientX,
+                    y: mouseEvent.clientY
+                });
+                mouseEvent.preventDefault();
+            }); 
+
 
             //This must be an anonymous function instead of a lambda because
             //d3 uses 'this' as the reference to the element that was clicked.
