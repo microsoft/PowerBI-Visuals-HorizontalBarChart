@@ -3,7 +3,7 @@
   "scripts": {
     "postinstall": "npm run typings:install",
     "typings:install": "typings install",
-    "posttypings:install": "pbiviz update 2.22.0",
+    "posttypings:install": "pbiviz update 2.2.0",
     "pbiviz": "pbiviz",
     "start": "pbiviz start",
     "cert": "pbiviz --create-cert",
