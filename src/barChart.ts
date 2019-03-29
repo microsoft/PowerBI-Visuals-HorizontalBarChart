@@ -450,6 +450,7 @@ module powerbi.extensibility.visual {
          *                                        the visual had queried.
          */
         public update(options: VisualUpdateOptions) {
+
             // bar chart diagram
             //  ________________________________   _
             //  |                               |  |
@@ -482,11 +483,12 @@ module powerbi.extensibility.visual {
             let width = options.viewport.width;
             let height = options.viewport.height;
 
+
             // Calculate max height of each bar based on the total height of the visual
             let xScaledMax = height / BarChart.Config.maxHeightScale;
             // Min height is independent of height the bar should be visible irrespective of the number of bars or the height of the visual
             let xScaledMin = BarChart.Config.xScaledMin;
-            if (settings.barHeight.show) {
+            if (settings.barHeight && settings.barHeight.show) {
 
                 xScaledMin = settings.barHeight.height;
             }
@@ -536,7 +538,7 @@ module powerbi.extensibility.visual {
                 .rangeBands([5, height], BarChart.Config.barPadding, outerPadding);
 
             // cap the fontsize between 8.5 and 40 for aesthetics (only when autoscaling font)
-            let fontSizeToUse = this.barChartSettings.fontParams.show ? this.barChartSettings.fontParams.fontSize : yScale.rangeBand() / BarChart.Config.fontScaleFactor;
+            let fontSizeToUse = this.barChartSettings.fontParams && this.barChartSettings.fontParams.show ? this.barChartSettings.fontParams.fontSize : yScale.rangeBand() / BarChart.Config.fontScaleFactor;
             if (fontSizeToUse < 8.5 && !this.barChartSettings.fontParams.show)
                 fontSizeToUse = 8.5;
             if (fontSizeToUse > 40 && !this.barChartSettings.fontParams.show)
@@ -546,7 +548,7 @@ module powerbi.extensibility.visual {
             //  to leave room for label to be displayed inside the draw area for the .
             // Use the formatted value for the longest bar
             let indexForDataMax = getIndexForDataMax(viewModel.dataPoints);
-            let formattedValue = viewModel.dataPoints[indexForDataMax].formattedValue;
+            let formattedValue = viewModel.dataPoints.length > 0 ? viewModel.dataPoints[indexForDataMax].formattedValue : "";
 
             let textProperties: TextProperties = {
                 text: formattedValue,
@@ -559,8 +561,10 @@ module powerbi.extensibility.visual {
                 .range([0, width - offset - 40]); //subtracting 40 for padding between the bar and the label
 
 	    // empty rect to take full width for clickable area for clearing selection
-            let rectContainer = this.barContainer.selectAll('rect.rect-container').data([0]);
 
+        let rectContainer = this.barContainer.selectAll('rect.rect-container').data([0]);
+
+            
             rectContainer
                 .enter()
                 .append('rect')
@@ -569,13 +573,23 @@ module powerbi.extensibility.visual {
             rectContainer.attr({
                 width: width,
                 height: height,
-                fill: 'white'
+                fill: 'transparent'
             })
-
             let bars = this.barContainer
-                .selectAll('g.bar')
-                .data(viewModel.dataPoints);
-
+            .selectAll('g.bar')
+            .data(viewModel.dataPoints);
+            
+            if(viewModel.dataPoints.length == 0 ) {
+                let removeBars =  this.barContainer.selectAll('g.bar');
+                removeBars.selectAll("rect.bar").remove();
+                removeBars.selectAll("rect.overlapBar").remove();
+                removeBars.selectAll("circle").remove();
+                removeBars.selectAll("line").remove();
+                removeBars.selectAll("text.bar-value").remove();
+                removeBars.selectAll("text.bar-text").remove();
+                removeBars.selectAll("rect.valuesRect").remove();
+                removeBars.remove();
+            }
 
             bars
                 .enter()
@@ -742,6 +756,8 @@ module powerbi.extensibility.visual {
                 let valuesRect = bars.selectAll('rect.valuesRect').remove();
             }
 
+            
+
             this.tooltipServiceWrapper.addTooltip(this.barContainer.selectAll('.bar'),
                 (tooltipEvent: TooltipEventArgs<BarChartDataPoint>) => this.getTooltipData(tooltipEvent.data),
                 (tooltipEvent: TooltipEventArgs<BarChartDataPoint>) => tooltipEvent.data.selectionId
@@ -762,6 +778,18 @@ module powerbi.extensibility.visual {
             );
 
             let selectionManager = this.selectionManager;
+            this.svg.on('contextmenu', () => {
+
+                const mouseEvent: MouseEvent = d3.event as MouseEvent;
+                const eventTarget: EventTarget = mouseEvent.target;
+                let dataPoint = d3.select(eventTarget).datum();
+                selectionManager.showContextMenu(dataPoint? dataPoint.selectionId : {}, {
+                    x: mouseEvent.clientX,
+                    y: mouseEvent.clientY
+                });
+                mouseEvent.preventDefault();
+            }); 
+
 
             //This must be an anonymous function instead of a lambda because
             //d3 uses 'this' as the reference to the element that was clicked.
@@ -1055,6 +1083,7 @@ module powerbi.extensibility.visual {
         return i;
     }
     function getIndexForDataMax(arr) {
+        if(arr.length < 1) return 0;
         var i = 0;
         var p = 0;
         var max = arr[i].value;
