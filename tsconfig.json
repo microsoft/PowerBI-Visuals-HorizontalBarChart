@@ -1,13 +1,13 @@
 {
-	"compilerOptions": {
-		"allowJs": true,
-		"emitDecoratorMetadata": true,
-		"experimentalDecorators": true,
-		"target": "ES5",
-		"sourceMap": true,
-		"outDir": "./.tmp/build/"
-	},
-	"files": [
-		"src/barChart.ts"
-	]
+  "compilerOptions": {
+    "allowJs": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "target": "ES5",
+    "sourceMap": true,
+    "outDir": "./.tmp/build/"
+  },
+  "files": [
+    "src/barChart.ts"
+  ]
 }
