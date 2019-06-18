@@ -4,12 +4,12 @@
     "displayName": "Horizontal Bar Chart",
     "guid": "BarChartF5983CEA542C47889C9DE852B430DE5F",
     "visualClassName": "BarChart",
-    "version": "1.5.3",
+    "version": "1.5.4",
     "description": "A horizontal bar chart that saves space by putting the category labels inside the bars",
     "supportUrl": "https://community.powerbi.com/t5/Custom-Visuals-Community/ct-p/CustomVisuals",
     "gitHubUrl": "https://github.com/Microsoft/PowerBI-Visuals-HorizontalBarChart"
   },
-  "apiVersion": "2.2.0",
+  "apiVersion": "2.5.0",
   "author": {
     "name": "Microsoft",
     "email": "pbicvsupport@microsoft.com"
@@ -17,17 +17,7 @@
   "assets": {
     "icon": "assets/icon6.png"
   },
-  "externalJS": [
-    "node_modules/jquery/dist/jquery.min.js",
-    "node_modules/lodash/lodash.min.js",
-    "node_modules/d3/d3.min.js",
-    "node_modules/globalize/lib/globalize.js",
-    "node_modules/globalize/lib/cultures/globalize.culture.en-US.js",
-    "node_modules/powerbi-visuals-utils-typeutils/lib/index.js",
-    "node_modules/powerbi-visuals-utils-svgutils/lib/index.js",
-    "node_modules/powerbi-visuals-utils-dataviewutils/lib/index.js",
-    "node_modules/powerbi-visuals-utils-formattingutils/lib/index.js"
-  ],
+  "externalJS": [],
   "style": "style/visual.less",
   "capabilities": "capabilities.json"
 }
