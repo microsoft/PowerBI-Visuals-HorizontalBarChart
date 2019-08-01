@@ -127,6 +127,7 @@ class TooltipServiceWrapper implements ITooltipServiceWrapper {
                 isTouchEvent: true,
                 immediately: true,
             });
+        });
 
             let tooltipEventArgs = this.makeTooltipEventArgs<T>(rootNode, isPointerEvent, true);
             if (!tooltipEventArgs)
