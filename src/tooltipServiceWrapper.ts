@@ -66,8 +66,9 @@ class TooltipServiceWrapper implements ITooltipServiceWrapper {
                 return;
 
             let tooltipEventArgs = this.makeTooltipEventArgs<T>(rootNode, true, false);
-            if (!tooltipEventArgs)
+            if (!tooltipEventArgs) {
                 return;
+            }
 
             let tooltipInfo = getTooltipInfoDelegate(tooltipEventArgs);
             if (tooltipInfo == null)
@@ -96,14 +97,16 @@ class TooltipServiceWrapper implements ITooltipServiceWrapper {
                 return;
 
             let tooltipEventArgs = this.makeTooltipEventArgs<T>(rootNode, true, false);
-            if (!tooltipEventArgs)
+            if (!tooltipEventArgs) {
                 return;
+            }
 
             let tooltipInfo: VisualTooltipDataItem[];
             if (reloadTooltipDataOnMouseMove) {
                 tooltipInfo = getTooltipInfoDelegate(tooltipEventArgs);
-                if (tooltipInfo == null)
+                if (tooltipInfo == null){
                     return;
+                }
             }
 
             let selectionId = getDataPointIdentity(tooltipEventArgs);
@@ -130,8 +133,9 @@ class TooltipServiceWrapper implements ITooltipServiceWrapper {
         });
 
             let tooltipEventArgs = this.makeTooltipEventArgs<T>(rootNode, isPointerEvent, true);
-            if (!tooltipEventArgs)
+            if (!tooltipEventArgs) {
                 return;
+            }
 
             let tooltipInfo = getTooltipInfoDelegate(tooltipEventArgs);
             let selectionId = getDataPointIdentity(tooltipEventArgs);
