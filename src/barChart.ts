@@ -1117,7 +1117,7 @@ export class BarChart implements IVisual {
         }
 
         const self: this = this;
-        selection.each((barDataPoint,i,nodes) => {
+        selection.each((barDataPoint , i , nodes) => {
             const isSelected: boolean = self.isSelectionIdInArray(selectionIds, barDataPoint.selectionId);
             select(nodes[i]).style(
                 "fill-opacity",
