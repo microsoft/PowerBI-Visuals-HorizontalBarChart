@@ -542,7 +542,7 @@ export class BarChart implements IVisual {
         } else {
             xScaledMin = BarChart.Config.xScaledMin;
         }
-        let outerPadding = 0.1;
+        let outerPadding = -0.1;
         // calcX is the calculated height of the bar+inner padding that will be required if we simply
         // distribute the height with the bar count (no scrolling)
         let calcX = height /
@@ -583,11 +583,10 @@ export class BarChart implements IVisual {
 
         this.xAxis.style("font-size", parseInt(min([height, width]), 10) * BarChart.Config.xAxisFontMultiplier);
         // this.xAxis.attr("font-size",parseInt(min([height, width])) * BarChart.Config.xAxisFontMultiplier)
-
         let yScale = scaleBand()
             .domain(viewModel.dataPoints.map((d) => d.category))
             .rangeRound([5, height])
-            .paddingInner(BarChart.Config.barPadding)
+            .padding(BarChart.Config.barPadding)
             .paddingOuter(outerPadding);
         // .rangeBands([5, height], BarChart.Config.barPadding, outerPadding);
 
@@ -1118,7 +1117,7 @@ export class BarChart implements IVisual {
         }
 
         const self: this = this;
-        selection.each((barDataPoint,i,nodes) => {
+        selection.each((barDataPoint , i , nodes) => {
             const isSelected: boolean = self.isSelectionIdInArray(selectionIds, barDataPoint.selectionId);
             select(nodes[i]).style(
                 "fill-opacity",

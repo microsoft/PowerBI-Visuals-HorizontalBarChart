@@ -1,3 +1,8 @@
+## 1.5.5
+* Updated lodash to 4.17.15 from 4.17.11
+* Fixed top padding when there are a lot of items
+* Fixed tooltip bug
+
 ## 1.5.4
 * updated the version to 1.5.4
 * updated d3 to v5
