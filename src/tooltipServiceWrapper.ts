@@ -250,10 +250,8 @@ class TooltipServiceWrapper implements ITooltipServiceWrapper {
         if (isPointerEvent) {
             // copied from d3_eventSource (which is not exposed)
             let e = <any> d3Event;
-            let s;
-            while (s = e.sourceEvent) {
-                e = s;
-            }
+
+
             let rect = rootNode.getBoundingClientRect();
             coordinates = [e.clientX - rect.left - rootNode.clientLeft, e.clientY - rect.top - rootNode.clientTop];
         }
