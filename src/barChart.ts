@@ -581,7 +581,7 @@ export class BarChart implements IVisual {
         this.svg.attr("width", width);
         this.svg.attr("height", height);
 
-        this.xAxis.style("font-size", parseInt(min([height, width]), 10) * BarChart.Config.xAxisFontMultiplier);
+        this.xAxis.style("font-size", parseInt(min(<any>[height, width]), 10) * BarChart.Config.xAxisFontMultiplier);
         // this.xAxis.attr("font-size",parseInt(min([height, width])) * BarChart.Config.xAxisFontMultiplier)
         let yScale = scaleBand()
             .domain(viewModel.dataPoints.map((d) => d.category))
@@ -836,6 +836,11 @@ export class BarChart implements IVisual {
                 .attr("fill", viewModel.settings.showBarLabels.textColor.solid.color)
                 .text((d) => { return <string> d.formattedValue; });
             textValues.exit().remove();
+        } else {
+            let valuesRect = bars.selectAll("rect.valuesRect")
+            let textValues = bars.selectAll("text.bar-value")
+            valuesRect.remove()
+            textValues.remove()
         }
 
         this.tooltipServiceWrapper.addTooltip(this.barContainer.selectAll(".bar"),
