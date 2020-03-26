@@ -290,4 +290,6 @@ __pycache__/
 # PBIVIZ
 .api
 .tmp
-dist/BarChartF5983CEA542C47889C9DE852B430DE5F.1.5.5.pbiviz
+dist/
+webpack.statistics.dev.html
+webpack.statistics.prod.html

@@ -1,11 +1,14 @@
 {
   "compilerOptions": {
-    "allowJs": true,
+    "allowJs": false,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "target": "ES5",
+    "module": "es6",
+    "target": "ES6",
     "sourceMap": true,
-    "outDir": "./.tmp/build/"
+    "outDir": "./.tmp/build/",
+    "moduleResolution": "node",
+    "declaration": true
   },
   "files": [
     "src/barChart.ts"

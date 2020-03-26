@@ -581,7 +581,7 @@ export class BarChart implements IVisual {
         this.svg.attr("width", width);
         this.svg.attr("height", height);
 
-        this.xAxis.style("font-size", parseInt(min([height, width]), 10) * BarChart.Config.xAxisFontMultiplier);
+        this.xAxis.style("font-size", parseInt(min(<any>[height, width]), 10) * BarChart.Config.xAxisFontMultiplier);
         // this.xAxis.attr("font-size",parseInt(min([height, width])) * BarChart.Config.xAxisFontMultiplier)
         let yScale = scaleBand()
             .domain(viewModel.dataPoints.map((d) => d.category))
