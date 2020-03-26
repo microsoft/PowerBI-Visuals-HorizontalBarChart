@@ -836,6 +836,11 @@ export class BarChart implements IVisual {
                 .attr("fill", viewModel.settings.showBarLabels.textColor.solid.color)
                 .text((d) => { return <string> d.formattedValue; });
             textValues.exit().remove();
+        } else {
+            let valuesRect = bars.selectAll("rect.valuesRect")
+            let textValues = bars.selectAll("text.bar-value")
+            valuesRect.remove()
+            textValues.remove()
         }
 
         this.tooltipServiceWrapper.addTooltip(this.barContainer.selectAll(".bar"),

@@ -2,6 +2,8 @@
 * Updated d3, @types/d3, tslint, tslint-microsoft-contrib packages
 * Updated powerbi-visuals-api
 * Fixed tslint rules
+* Fixed missing `sourceEvent` property error
+* Fixed `Bar Labels` toggle
 
 ## 1.5.5
 * Updated lodash to 4.17.15 from 4.17.11
