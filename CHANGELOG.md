@@ -2,6 +2,9 @@
 * Minor error handling
 
 ## 1.5.6
+* Updated d3, @types/d3, tslint, tslint-microsoft-contrib packages
+* Updated powerbi-visuals-api
+* Fixed tslint rules
 * Fixed missing `sourceEvent` property error
 * Fixed `Bar Labels` toggle
 

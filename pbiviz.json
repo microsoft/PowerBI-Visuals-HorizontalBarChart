@@ -9,7 +9,7 @@
     "supportUrl": "https://community.powerbi.com/t5/Custom-Visuals-Community/ct-p/CustomVisuals",
     "gitHubUrl": "https://github.com/Microsoft/PowerBI-Visuals-HorizontalBarChart"
   },
-  "apiVersion": "2.5.0",
+  "apiVersion": "2.6.0",
   "author": {
     "name": "Microsoft",
     "email": "pbicvsupport@microsoft.com"

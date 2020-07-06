@@ -293,3 +293,5 @@ __pycache__/
 .tmp
 webpack.statistics.prod.html
 webpack.statistics.dev.html
+dist/
+
