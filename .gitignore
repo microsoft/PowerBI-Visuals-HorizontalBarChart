@@ -291,3 +291,5 @@ __pycache__/
 # PBIVIZ
 .api
 .tmp
+webpack.statistics.prod.html
+webpack.statistics.dev.html

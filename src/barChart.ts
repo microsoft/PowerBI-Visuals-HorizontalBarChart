@@ -406,7 +406,7 @@ function getOverlapIndex(metadata) {
     let index = -1;
     if (metadata.columns && metadata.columns.length > 0) {
         metadata.columns.forEach((element) => {
-            if (element.roles.hasOwnProperty("overlapValues")) {
+            if (element.roles && element.roles.hasOwnProperty("overlapValues")) {
                 index = element.index;
             }
         });
@@ -687,6 +687,7 @@ export class BarChart implements IVisual {
             .attr("selected", (d) => d.selected);
 
         rects.exit().remove();
+
         let overlapRects = bars.selectAll("rect.overlapBar").data((d) => [d]);
 
         mergeElement = overlapRects

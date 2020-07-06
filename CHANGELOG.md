@@ -1,3 +1,6 @@
+## 1.5.7
+* Minor error handling
+
 ## 1.5.6
 * Fixed missing `sourceEvent` property error
 * Fixed `Bar Labels` toggle
