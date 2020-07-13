@@ -8,6 +8,7 @@
 *.user
 *.userosscache
 *.sln.docstates
+dist/
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -290,6 +291,7 @@ __pycache__/
 # PBIVIZ
 .api
 .tmp
-dist/
-webpack.statistics.dev.html
 webpack.statistics.prod.html
+webpack.statistics.dev.html
+dist/
+

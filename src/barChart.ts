@@ -406,7 +406,7 @@ function getOverlapIndex(metadata) {
     let index = -1;
     if (metadata.columns && metadata.columns.length > 0) {
         metadata.columns.forEach((element) => {
-            if (element.roles.hasOwnProperty("overlapValues")) {
+            if (element.roles && element.roles.hasOwnProperty("overlapValues")) {
                 index = element.index;
             }
         });
@@ -687,6 +687,7 @@ export class BarChart implements IVisual {
             .attr("selected", (d) => d.selected);
 
         rects.exit().remove();
+
         let overlapRects = bars.selectAll("rect.overlapBar").data((d) => [d]);
 
         mergeElement = overlapRects
@@ -786,7 +787,9 @@ export class BarChart implements IVisual {
         }
 
         texts.exit().remove();
+
         if (viewModel.settings.showBarLabels.show) {
+
             let valuesRect = bars.selectAll("rect.valuesRect").data((d) => [d]);
 
             mergeElement = valuesRect
@@ -837,6 +840,12 @@ export class BarChart implements IVisual {
                 .text((d) => { return <string> d.formattedValue; });
             textValues.exit().remove();
         } else {
+            let valuesRect = bars.selectAll("rect.valuesRect")
+            let textValues = bars.selectAll("text.bar-value")
+            valuesRect.remove()
+            textValues.remove()
+        }
+        else {
             let valuesRect = bars.selectAll("rect.valuesRect")
             let textValues = bars.selectAll("text.bar-value")
             valuesRect.remove()
